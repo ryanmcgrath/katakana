@@ -28,7 +28,7 @@ attribution as the MIT license specifies. :)
 Questions, Comments?
 ---------------------------------------------------------------------------------------------------------------------------
 Email: **ryan [at] venodesigns _dot_ net**  
-Twitter: **[@ryanmcgrath](http://twitter.com/ryanmcgrath)** 
+Twitter: **[@ryanmcgrath](http://twitter.com/ryanmcgrath)**   
 Web: **[Veno Designs](http://venodesigns.net/)**  
 
 

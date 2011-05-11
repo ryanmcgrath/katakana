@@ -1,0 +1,520 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta name="viewport" content="width=320; user-scalable=no" />
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<title>Katanakana</title>
+	<style type="text/css">
+		html {
+			height: 100%;
+			background: -webkit-gradient(linear, left top, left bottom, from(#dedede), to(#f9f9f9));
+			color: #444;
+			padding: 0;
+			margin: 0;
+			font-family: 'Droid Sans', helvetica, sans-serif;
+			overflow: hidden;
+		}
+
+		body { padding: 0; margin: 0; height: 100%; }
+
+		#header {
+			position: relative;
+			width: 100%;
+			height: 40px;
+			background: -webkit-gradient(linear, left top, left bottom, from(#3d3d3d), to(#010101));
+			-webkit-box-shadow: 1px 1px 5px #787878;
+		}
+
+		#header span {
+			position: absolute;
+			font-size: 20px;
+			top: 9px;
+			left: 10px;
+			font-weight: bold;
+			text-shadow: 1px 1px 1px #787878;
+			color: #f9f9f9;
+		}
+
+		#right, #wrong {
+			float: right;
+			padding-top: 12px;
+			height: 28px;
+			min-width: 40px;
+			text-align: center;
+			color: #f9f9f9;
+			text-shadow: 1px 1px 1px #121212;
+			border-left: 1px solid #010101;
+		}
+
+		#right { background: -webkit-gradient(linear, left top, left bottom, from(#6fe78c), to(#169a35)); }
+		#wrong { background: -webkit-gradient(linear, left top, left bottom, from(#e92222), to(#9f1515)); }
+		.right { background: -webkit-gradient(linear, left top, left bottom, from(#6fe78c), to(#169a35)) !important; border: 1px solid #169a35 !important; }
+		.wrong { background: -webkit-gradient(linear, left top, left bottom, from(#e92222), to(#9f1515)) !important; border: 1px solid #9f1515 !important; }
+
+		#intro {
+			padding: 10px;
+			height: 0; /* Default, gets judged */
+			text-align: left;
+			-webkit-transition: opacity .25s linear;
+		}
+		
+		#intro h1 {
+			font-size: 20px;
+			text-shadow: 1px 1px 1px #b7b7b7;
+			color: #010101;
+			padding-bottom: 6px;
+			margin-bottom: 10px;
+			border-bottom: 1px solid #c9c9c9;
+		}
+		
+		#intro p {
+			margin: 0 0 15px 0;
+			font-size: 14px;
+			line-height: 16px;
+			text-shadow: 1px 1px 1px #b9b9b9;
+		}
+
+		#game {
+			height: 0; /* Default, gets judged */
+			-webkit-transition: opacity .25s linear;
+			padding: 10px;
+			position: relative;
+			text-align: center;
+		}
+
+		#letter, #choices { float: left; }
+
+		#letter {
+			font-weight: bold;
+			border: 1px solid #b9b9b9;
+			background: -webkit-gradient(linear, left top, left bottom, from(#fafafa), to(#e7e7e7));
+			-webkit-border-radius: 6px;
+			-webkit-box-shadow: 1px 1px 5px #f7f7f7;
+			-webkit-transition: opacity .25s linear;
+			margin-bottom: 9px;
+			letter-spacing: -1px;
+		}
+		
+		#choices button, #get_started {
+			color: #fff;
+			font-weight: bold;
+			text-shadow: 1px 1px 3px #121212;
+			border: 1px solid #1874ca;
+			-webkit-box-shadow: 1px 1px 5px #787878;
+			width: 100%;
+			margin: 0 auto 10px;
+			padding: 7px 0;
+			-webkit-border-radius: 6px;
+			background: -webkit-gradient(linear, left top, left bottom, from(#2792f6), to(#146abb));
+		}	
+	</style>
+</head>
+<body>
+	<div id="header">
+		<span>Katanakana</span>
+		<div id="right">0</div>
+		<div id="wrong">0</div>
+	</div>
+	
+	<div id="intro">
+		<h1>You Can Do This!</h1>
+		<p>
+			Learning any of the Japanese alphabets can seem like a daunting task because there's
+			just so many characters. Thing is, this doesn't <em>have</em> to be difficult! 
+		</p>
+		
+		<p>
+			The human brain works in a mysterious fashion, and everybody has their own point at which the brain commits something
+			to memory. Katanakana watches how you identify characters, and will figure out when your brain has the best chance of
+			storing the relations you need to read Japanese.
+		</p>
+		
+		<p>
+			Once this is determined, it'll make you re-identify those characters
+			at the ideal moment, and you'll be good to go!
+		</p>
+		
+		<button id="get_started">Get Started Now!</button>
+	</div>
+
+	<div id="game" style="display: none; opacity: 0;">
+		<div id="letter"></div>
+
+		<div id="choices">
+			<button id="choice_1"></button>
+			<button id="choice_2"></button>
+			<button id="choice_3"></button>
+			<button id="choice_4"></button>
+		</div>
+	</div>
+
+	<script type="text/javascript" charset="utf-8" src="phonegap.0.9.4.js"></script>
+	<script type="text/javascript">
+		Array.prototype.contains = function(v) {
+			for(var i = 0, x = this.length; i < x; i++) {
+				if(this[i] === v) return true;
+			}
+			return false;
+		};
+	
+		Array.prototype.unique = function(blacklist) {
+			var newArr = [];
+			for(var i = 0, l = this.length; i < l; i++) {
+				if(newArr.contains(this[i]) || (typeof blacklist !== 'undefined' && this[i] === blacklist)) this.splice(i, 1);
+				else newArr.push(this[i]);
+			}
+			return this;
+		};
+		
+		/*	Fisher Yates what up */
+		Array.prototype.shuffle = function() {
+			var i = this.length;
+			if(i === 0) return false;
+			while(--i) {
+				var j = Math.floor(Math.random() * (i + 1)),
+					tmpi = this[i],
+					tmpj = this[j];
+				this[i] = tmpj;
+				this[j] = tmpi;
+			}
+			return this;
+		};
+		
+		Array.prototype.average = function() {
+			var avg = 0,
+				i = this.length;
+			
+			if(i === 0) return false;
+			while(--i) {
+				avg = avg + this[i];
+			}
+			return parseInt(avg / this.length, 10);
+		};
+		
+		var kat = {
+			choices: [],
+			game: null,
+			letter: null,
+			right: null,
+			wrong: null,
+			rightCount: 0,
+			wrongCount: 0,
+			oldFontSize: null,
+			orientationSwapFontFize: null,
+			
+			/*	Default to two minutes... */
+			idealLearnTime: 1000*60,
+			
+			/*	Gets constructed in a bit. */
+			sounds: [],
+			
+			/*	An array of ones that were chosen incorrectly. Circles back to them
+			 *	on average every 2 minutes to start.
+			 */
+			loopBacks: [],
+			previousLoopBackTimers: [1000*60*2],
+			
+			/*	Used for lookup of time taken to commit to memory. */
+			previousLoopBacks: {},
+			
+			/*	This gets set to true after the 4 minute mark, wherein the 
+			 *	turn functions will take over until loopBacks is empty for each new
+			 *	turn.
+			 */
+			runloopBacks: false,
+			
+			/*	Stored object from setTimeout, for checking. */
+			loopBackTimer: null,
+			
+			katas: {
+				'ア': 'a <em>(ah)</em>',
+				'カ': 'ka <em>(kah)</em>',
+				'サ': 'sa <em>(sah)</em>',
+				'タ': 'ta <em>(tah)</em>',
+				'ナ': 'na <em>(nah)</em>',
+				'ハ': 'ha <em>(hah)</em>',
+				'マ': 'ma <em>(mah)</em>',
+				'ヤ': 'ya <em>(yah)</em>',
+				'ラ': 'ra <em>(rah)</em>',
+				'ワ': 'wa <em>(wah)</em>',
+				'ン': 'n',
+				'ガ': 'ga <em>(gah)</em>',
+				'ザ': 'za <em>(zah)</em>',
+				'ダ': 'da <em>(dah)</em>',
+				'バ': 'ba <em>(bah)</em>',
+				'パ': 'pa <em>(pah)</em>',
+				'アァ': 'fa <em>(fah)</em>',
+				'キャ': 'kya <em>(kyah)</em>',
+				'シャ': 'sha <em>(shah)</em>',
+				'チャ': 'cha <em>(chah)</em>',
+				'ニャ': 'nya <em>(nyah)</em>',
+				'ヒャ': 'hya <em>(hyah)</em>',
+				'ミャ': 'mya <em>(myah)</em>',
+				'リャ': 'rya <em>(ryah)</em>',
+				'ギャ': 'gya <em>(gyah)</em>',
+				'ヅャ': 'ja <em>(jah)</em>',
+				'ビャ': 'bya <em>(byah)</em>',
+				'ピャ': 'pya <em>(pyah)</em>',
+				'イ': 'i <em>(ee)</em>',
+				'キ': 'ki <em>(kee)</em>',
+				'シ': 'shi <em>(shee)</em>',
+				'チ': 'chi <em>(chee)</em>',
+				'ニ': 'ni <em>(nee)</em>',
+				'ヒ': 'hi <em>(hee)</em>',
+				'ミ': 'mi <em>(mee)</em>',
+				'リ': 'ri <em>(ree)</em>',
+				'ギ': 'gi <em>(gee)</em>',
+				'ジ': 'ji <em>(jee)</em>',
+				'ヂ': 'ji <em>(jee)</em>',
+				'ビ': 'bi <em>(bee)</em>',
+				'ピ': 'pi <em>(pee)</em>',
+				'ワィ': 'fi <em>(fee)</em>',
+				'ウ': 'u <em>(oo)</em>',
+				'ク': 'ku <em>(koo)</em>',
+				'ス': 'su <em>(soo)</em>',
+				'ツ': 'tsu <em>(tsoo)</em>',
+				'ヌ': 'nu <em>(noo)</em>',
+				'フ': 'fu <em>(foo)</em>',
+				'ム': 'mu <em>(moo)</em>',
+				'ユ': 'yu <em>(yoo)</em>',
+				'ル': 'ru <em>(roo)</em>',
+				'グ': 'gu <em>(goo)</em>',
+				'ズ': 'zu <em>(zoo)</em>',
+				'ヅ': 'zu <em>(zoo)</em>',
+				'ブ': 'bu <em>(boo)</em>',
+				'プ': 'pu <em>(poo)</em>',
+				'キユ': 'kyu <em>(kyoo)</em>',
+				'シユ': 'shu <em>(shoo)</em>',
+				'チユ': 'chu <em>(choo)</em>',
+				'ニユ': 'nyu <em>(nyoo)</em>',
+				'ヒユ': 'hyu <em>(hyoo)</em>',
+				'ミユ': 'myu <em>(myoo)</em>',
+				'リユ': 'ryu <em>(ryoo)</em>',
+				'ギユ': 'gyu <em>(gyoo)</em>',
+				'ジユ': 'ju <em>(joo)</em>',
+				'ビユ': 'byu <em>(byoo)</em>',
+				'ピユ': 'pyu <em>(pyoo)</em>',
+				'エ': 'e <em>(eh)</em>',
+				'ケ': 'ke <em>(keh)</em>',
+				'セ': 'se <em>(seh)</em>',
+				'テ': 'te <em>(teh)</em>',
+				'ネ': 'ne <em>(neh)</em>',
+				'ヘ': 'he <em>(heh)</em>',
+				'メ': 'me <em>(meh)</em>',
+				'レ': 're <em>(reh)</em>',
+				'ゲ': 'ge <em>(geh)</em>',
+				'ゼ': 'ze <em>(zeh)</em>',
+				'デ': 'de <em>(deh)</em>',
+				'ベ': 'be <em>(beh)</em>',
+				'ペ': 'pe <em>(peh)</em>',
+				'フエ': 'fe <em>(feh)</em>',
+				'オ': 'o <em>(oh)</em>',
+				'コ': 'ko <em>(koh)</em>',
+				'ソ': 'so <em>(soh)</em>',
+				'ト': 'to <em>(toh)</em>',
+				'ノ': 'no <em>(noh)</em>',
+				'ホ': 'ho <em>(hoh)</em>',
+				'モ': 'mo <em>(moh)</em>',
+				'ヨ': 'yo <em>(yoh)</em>',
+				'ロ': 'ro <em>(roh)</em>',
+				'ヲ': 'o <em>(oh)</em>',
+				'ゴ': 'go <em>(goh)</em>',
+				'ゾ': 'zo <em>(zoh)</em>',
+				'ド': 'do <em>(doh)</em>',
+				'ボ': 'bo <em>(boh)</em>',
+				'ポ': 'po <em>(poh)</em>',
+				'フォ': 'fo <em>(foh)</em>',
+				'キヨ': 'kyo <em>(kyoh)</em>',
+				'シヨ': 'sho <em>(shoh)</em>',
+				'チヨ': 'cho <em>(choh)</em>',
+				'ニヨ': 'nyo <em>(nyoh)</em>',
+				'ヒヨ': 'hyo <em>(hyoh)</em>',
+				'ミヨ': 'myo <em>(myoh)</em>',
+				'リヨ': 'ryo <em>(ryoh)</em>',
+				'ギヨ': 'gyo <em>(gyoh)</em>',
+				'ジヨ': 'jo <em>(joh)</em>',
+				'ビヨ': 'byo <em>(byoh)</em>',
+				'ピヨ': 'pyo <em>(pyoh)</em>',
+			},
+
+			/*	Yeah custom layout managers because CSS wasn't meant for this. ;P */
+			resolveLayout: function() {
+				var w = window.innerWidth,
+					h = window.innerHeight;
+
+				/*	Minus 20 to account for left/right automagic padding. */
+				kat.game.style.width = (w - 20) + 'px';
+
+				/*	Minus 80 for (40 = header height, 20 pixels total top/bottom automagic padding) */
+				kat.game.style.height = (h - 80) + 'px';
+			
+				/*	Get the letter nice and into position. */
+				if(w < h) {
+					var ideal = w - 22;
+					kat.letter.style.cssText = "width: " + ideal + "px; height: " + ideal + "px; margin: 0 auto 10px;";
+					kat.letter.style.fontSize = (kat.letter.innerHTML.length > 1 ? ideal - 150 : ideal - 30) + "px";
+					kat.choicesNode.style.cssText = 'float: left; clear: left; width: ' + ideal + 'px;';
+					
+					kat.choices.forEach(function(btn) {
+						btn.style.cssText = 'padding: 7px 0; font-size: 12px;';
+					});
+				} else {
+					var ideal = h - 60;
+					kat.letter.style.cssText = "width: " + ideal + "px; height: " + ideal + "px; margin: 0 10px 0 0;";
+					kat.letter.style.fontSize = (kat.letter.innerHTML.length > 1 ? ideal - 140 : ideal - 130) + "px";
+					kat.choicesNode.style.cssText = 'float: right; clear: none; width: ' + ((w - 35) - ideal) + 'px;';
+					
+					kat.choices.forEach(function(btn) {
+						btn.style.cssText = 'padding: 50px 0; font-size: 40px;';
+					});
+				}
+			},
+
+			check: function(e) {
+				e.preventDefault();
+				
+				if(e.srcElement.nodeType !== 1) return false;
+				
+				var ch = kat.letter.innerHTML, 
+					node = e.srcElement.nodeName === 'EM' ? e.srcElement.parentNode : e.srcElement,
+					possibleOtherNode = null,
+					answer = node.innerHTML;
+				
+				if(kat.katas[ch] === answer) {
+					node.className = 'right';
+					++kat.rightCount;
+					kat.right.innerHTML = kat.rightCount;
+					
+					if(typeof kat.previousLoopBacks[ch] !== 'undefined') {
+						var diff = +new Date() - kat.previousLoopBacks[ch];
+						kat.previousLoopBacks[ch] = undefined;
+						kat.previousLoopBackTimers.push(diff);
+						kat.idealLearnTime = kat.previousLoopBackTimers.average();
+					}
+				} else {
+					kat.loopBacks.push(ch);
+					
+					/*	If we're in loopBack mode and this is one they already got wrong
+					 *	once, then we wanna set the idealLearnTime to be the average of all the previous
+					 *	idealLearnTimes (set when they get one they had wrong correct).
+					 */
+					if(typeof kat.previousLoopBacks[ch] === 'undefined') { 
+						kat.previousLoopBacks[ch] = +new Date();
+					}
+					
+					/*	We're gonna come back to this one down the road. */
+					if(kat.loopBackTimer === null) {
+						kat.loopBackTimer = setTimeout(function() {
+							kat.runloopBacks = true;
+							clearTimeout(kat.loopBackTimer);
+							kat.loopBackTimer = null;
+						}, kat.idealLearnTime);
+					}
+					
+					++kat.wrongCount;
+					kat.wrong.innerHTML = kat.wrongCount;
+					
+					var correct_answer = kat.katas[ch];
+					
+					for(var choice in kat.choices) {
+						if(kat.choices[choice].innerHTML === correct_answer) {
+							possibleOtherNode = kat.choices[choice];
+							node.className = 'wrong';
+							possibleOtherNode.className = 'right';
+						}
+					}
+				}
+				
+				setTimeout(function() {
+					node.className = '';
+					if(possibleOtherNode !== null) possibleOtherNode.className = '';
+					kat.newTurn();
+				}, 1500);
+				
+				return false;				
+			},
+			
+			newTurn: function() {
+				if(kat.loopBacks.length <= 0) kat.runloopBacks = false;
+				
+				var kata = kat.sounds[Math.floor(Math.random() * (kat.sounds.length - 1))];
+				if(kat.runloopBacks) {
+					var rndm = kat.loopBacks.splice(Math.floor(Math.random() * (kat.loopBacks.length - 1)), 1)[0];
+					kata = {
+						ch: rndm,
+						sound: kat.katas[rndm]
+					};
+				}
+
+				var answers = [kata.sound],
+					extraAnswers = [],
+					choices = [],
+					lstRndm = null;
+				
+				for(var i = 0; i < 10; i++) {
+					extraAnswers.push(kat.sounds[Math.floor(Math.random() * (kat.sounds.length - 1))].sound);
+				}
+				answers = answers.concat(extraAnswers.unique(kata.sound).slice(0, 3)).shuffle();
+				
+				if(kata.ch.length > 1) {
+					if(kat.oldFontSize === null) {
+						kat.oldFontSize = parseInt(window.getComputedStyle(kat.letter, '')['font-size']);
+						kat.letter.style.fontSize = (kat.oldFontSize - 140) + 'px';
+					}
+					kat.letter.innerHTML = kata.ch;
+				} else {
+					if(kat.oldFontSize !== null) {
+						kat.letter.style.fontSize = kat.oldFontSize + 'px';
+						kat.oldFontSize = null;
+					}
+					kat.letter.innerHTML = kata.ch;
+				}
+				
+				for(var choice in kat.choices) {
+					choices.push(kat.choices[choice]);
+				}
+
+				for(var i = 0, j = choices.length; i < j; i++) {
+					choices[i].innerHTML = answers[i];
+				}
+				
+				return false;
+			},
+		};
+
+		document.addEventListener('deviceready', function() {
+			//document.addEventListener('menuKeyDown', function(e) {
+			//	navigator.notification.alert(device.uuid, function(){}, '', 'Dismiss');
+			//}, false);
+			
+			/*	Absense of querySelectorAll pre-Android 2.0 makes Ryan sad. ;P */
+			['choice_1', 'choice_2', 'choice_3', 'choice_4'].forEach(function(choice) {
+				kat.choices[choice] = document.getElementById(choice);
+				kat.choices[choice].addEventListener('touchstart', kat.check, false);
+			});
+	
+			['intro', 'game', 'letter','right', 'wrong', 'get_started'].forEach(function(nodeName) {
+				kat[nodeName] = document.getElementById(nodeName);
+			});
+			
+			/*	Need to go ahead and get a separate Array for the sounds to pull false entries from. */
+			for(var key in kat.katas) {	kat.sounds.push({ch: key, sound: kat.katas[key]}); }
+			
+			/*	When they hit get started, start... */
+			kat.get_started.addEventListener('touchstart', function(e) {
+				e.preventDefault();
+				kat.intro.style.display = 'none';
+				kat.newTurn();
+				kat.game.style.display = 'block';
+				kat.game.style.opacity = 1;
+				return false;
+			}, false);
+			
+			kat.choicesNode = document.getElementById('choices');
+					
+			kat.resolveLayout();
+			window.addEventListener('resize', kat.resolveLayout);			
+		}, false);
+	</script>
+</body>
+</html>
